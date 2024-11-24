@@ -38,7 +38,7 @@ export default function Home() {
             'Authorization': `Bearer ${apiKey}`
           },
           body: JSON.stringify({
-            model: "deepseek-ai/DeepSeek-V2-Chat",
+            model: "Qwen/Qwen2.5-7B-Instruct",
             messages: [
               {
                 role: "system",
@@ -105,7 +105,7 @@ export default function Home() {
             'Authorization': `Bearer ${apiKey}`
           },
           body: JSON.stringify({
-            model: "deepseek-ai/DeepSeek-V2-Chat",
+            model: "Qwen/Qwen2.5-7B-Instruct",
             messages: [
               {
                 role: "system",
