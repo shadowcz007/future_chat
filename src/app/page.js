@@ -2,10 +2,13 @@
 import { useState } from 'react';
 import styles from "./chat.module.css";
 import ReactMarkdown from 'react-markdown';
+import Image from 'next/image';
 
 export default function Home() {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [imageLoadError, setImageLoadError] = useState(false);
 
   const sendMessage = async () => {
     const messageInput = document.getElementById('message-input');
@@ -179,6 +182,134 @@ export default function Home() {
     }
   };
 
+  // 添加生图函数
+  const generateImage = async () => {
+    if (isGeneratingImage) return;
+    
+    // 获取用户输入
+    const messageInput = document.getElementById('message-input');
+    const userPrompt = messageInput.value.trim();
+    
+    if (!userPrompt) {
+      setMessages(prev => [...prev, { content: '请输入提示文本再生成图片', isSent: false }]);
+      return;
+    }
+    
+    const client_id = crypto.randomUUID()
+    setIsGeneratingImage(true);
+    
+    try {
+      const ws = new WebSocket('ws://127.0.0.1:8188/ws?clientId='+client_id);
+      
+      // 准备 prompt
+      const prompt = {
+        "3": {
+          "class_type": "KSampler",
+          "inputs": {
+            "cfg": 8,
+            "denoise": 1,
+            "model": ["4", 0],
+            "negative": ["7", 0],
+            "positive": ["6", 0],
+            "sampler_name": "euler",
+            "scheduler": "normal",
+            "seed": Math.floor(Math.random() * 1000000),
+            "steps": 20,
+            "latent_image": ["5", 0]
+          }
+        },
+        "4": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "deliberate_v2.safetensors"
+          }
+        },
+        "5": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "batch_size": 1,
+            "height": 512,
+            "width": 512
+          }
+        },
+        "6": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "clip": ["4", 1],
+            "text": `masterpiece best quality ${userPrompt}`
+          }
+        },
+        "7": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "clip": ["4", 1],
+            "text": "bad hands"
+          }
+        },
+        "8": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": ["3", 0],
+            "vae": ["4", 2]
+          }
+        },
+        "9": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "filename_prefix": "ComfyUI",
+            "images": ["8", 0]
+          }
+        }
+      };
+      
+      // 发送请求到 ComfyUI
+      const response = await fetch('http://127.0.0.1:8188/prompt', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: prompt,
+          client_id
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('生成图片失败');
+      }
+
+      const result = await response.json();
+      
+      // 等待图片生成完成
+      ws.onmessage = async (event) => {
+        const message = JSON.parse(event.data);
+        
+        if (message.type === 'executing' && message.data.node === null) {
+          // 获取生成的图片
+          const historyResponse = await fetch(`http://127.0.0.1:8188/history/${result.prompt_id}`);
+          const history = await historyResponse.json();
+          const imageData = history[result.prompt_id].outputs['9'].images[0];
+          console.log('#imageData',imageData)
+          // 添加图片消息到聊天
+          setMessages(prev => [...prev, {
+            content: '',  // 不再使用markdown格式
+            imageUrl: `http://127.0.0.1:8188/view?filename=${imageData.filename}&type=${imageData.type || 'output'}&subfolder=${imageData.subfolder || ''}`,
+            isSent: false,
+            isImage: true
+          }]);
+          
+          ws.close();
+        }
+      };
+
+    } catch (error) {
+      console.error('生成图片错误:', error);
+      setMessages(prev => [...prev, { content: '生成图片失败，请重试', isSent: false }]);
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
   return (
     <div className={styles.chatContainer}>
       <div className={styles.chatHeader}>
@@ -198,7 +329,17 @@ export default function Home() {
               </div>
             )}
             <div className={styles.messageContent}>
-              <ReactMarkdown>{message.content}</ReactMarkdown>
+              {message.isImage ? (
+                <img 
+                  src={message.imageUrl} 
+                  alt="生成的图片"
+                  className={styles.generatedImage}
+                  onError={() => setImageLoadError(true)}
+                />
+              ) : (
+                <ReactMarkdown>{message.content}</ReactMarkdown>
+              )}
+              {imageLoadError && <div className={styles.error}>图片加载失败</div>}
             </div>
           </div>
         ))}
@@ -208,16 +349,23 @@ export default function Home() {
           type="text" 
           id="message-input" 
           placeholder="输入消息..." 
-          disabled={isLoading}
+          disabled={isLoading || isGeneratingImage}
           onKeyPress={(e) => {
-            if (e.key === 'Enter' && !isLoading) {
+            if (e.key === 'Enter' && !isLoading && !isGeneratingImage) {
               sendMessage();
             }
           }}
         />
         <button 
+          onClick={generateImage} 
+          disabled={isLoading || isGeneratingImage}
+          className={`${styles.imageButton} ${isGeneratingImage ? styles.loading : ''}`}
+        >
+          {isGeneratingImage ? '生成中...' : '生成图片'}
+        </button>
+        <button 
           onClick={sendMessage} 
-          disabled={isLoading}
+          disabled={isLoading || isGeneratingImage}
           className={isLoading ? styles.loading : ''}
         >
           {isLoading ? '发送中...' : '发送'}

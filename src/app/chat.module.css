@@ -1,173 +1,58 @@
 .chatContainer {
+    width: 100%;
     max-width: 800px;
     margin: 0 auto;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    background-color: white;
-}
-
-.chatHeader {
-    padding: 15px;
-    background-color: #075e54;
-    color: white;
+    padding: 20px;
 }
 
 .chatMessages {
-    flex: 1;
+    height: 70vh;
     overflow-y: auto;
     padding: 20px;
-}
-
-.message {
-    margin-bottom: 15px;
-    max-width: 70%;
-    clear: both;
-}
-
-.messageContent {
-    padding: 10px;
-    border-radius: 15px;
-    word-wrap: break-word;
-}
-
-.messageContent :global(p) {
-    margin: 0.5em 0;
-}
-
-.messageContent :global(h1),
-.messageContent :global(h2),
-.messageContent :global(h3),
-.messageContent :global(h4),
-.messageContent :global(h5),
-.messageContent :global(h6) {
-    margin: 0.5em 0;
-    font-weight: 600;
-}
-
-.messageContent :global(ul),
-.messageContent :global(ol) {
-    margin: 0.5em 0;
-    padding-left: 1.5em;
-}
-
-.messageContent :global(li) {
-    margin: 0.25em 0;
-}
-
-.messageContent :global(code) {
-    background-color: rgba(0, 0, 0, 0.05);
-    padding: 0.2em 0.4em;
-    border-radius: 3px;
-    font-family: monospace;
-    font-size: 0.9em;
-}
-
-.messageContent :global(pre) {
-    background-color: rgba(0, 0, 0, 0.05);
-    padding: 1em;
+    border: 1px solid #ccc;
     border-radius: 5px;
-    overflow-x: auto;
-}
-
-.messageContent :global(pre code) {
-    background-color: transparent;
-    padding: 0;
-}
-
-.messageContent :global(blockquote) {
-    margin: 0.5em 0;
-    padding-left: 1em;
-    border-left: 4px solid rgba(0, 0, 0, 0.1);
-    color: rgba(0, 0, 0, 0.7);
-}
-
-.messageContent :global(a) {
-    color: #0066cc;
-    text-decoration: none;
-}
-
-.messageContent :global(a:hover) {
-    text-decoration: underline;
-}
-
-@media (prefers-color-scheme: dark) {
-    .messageContent :global(code) {
-        background-color: rgba(255, 255, 255, 0.1);
-    }
-
-    .messageContent :global(pre) {
-        background-color: rgba(255, 255, 255, 0.1);
-    }
-
-    .messageContent :global(blockquote) {
-        border-left-color: rgba(255, 255, 255, 0.2);
-        color: rgba(255, 255, 255, 0.7);
-    }
-
-    .messageContent :global(a) {
-        color: #66b3ff;
-    }
-}
-
-.sent {
-    float: right;
-}
-
-.sent .messageContent {
-    background-color: #dcf8c6;
-}
-
-.received {
-    float: left;
-}
-
-.received .messageContent {
-    background-color: #e8e8e8;
 }
 
 .chatInput {
-    padding: 20px;
-    border-top: 1px solid #ddd;
+    margin-top: 20px;
     display: flex;
     gap: 10px;
 }
 
-.chatInput input {
-    flex: 1;
+.message {
+    margin: 10px 0;
     padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 20px;
-    outline: none;
+    border-radius: 5px;
 }
 
-.chatInput button {
-    padding: 10px 20px;
-    background-color: #075e54;
-    color: white;
-    border: none;
-    border-radius: 20px;
-    cursor: pointer;
-}
-
-.chatInput button:hover {
-    background-color: #054d44;
-}
-
-@media (max-width: 600px) {
-    .message {
-        max-width: 85%;
-    }
-}
-
-.received.professor .messageContent {
+.sent {
     background-color: #e3f2fd;
-    border-left: 4px solid #2196f3;
+    margin-left: auto;
+    max-width: 80%;
 }
 
-.messageRole {
-    font-size: 12px;
-    color: #666;
-    margin-bottom: 4px;
-    padding-left: 10px;
+.received {
+    background-color: #f5f5f5;
+    margin-right: auto;
+    max-width: 80%;
+}
+
+.error {
+    background-color: #ffebee;
+    color: #c62828;
+    margin-right: auto;
+    max-width: 80%;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 10px 0;
+}
+
+.generatedImage {
+    max-width: 100%;
+    height: auto;
+    border-radius: 5px;
+}
+
+.messageContent {
+    width: 100%;
 } 
