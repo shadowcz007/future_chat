@@ -26,7 +26,11 @@ export default function Home() {
           throw new Error('API key 未设置');
         }
 
-        // 调用 SiliconFlow API
+        // 创建一个新的消息对象用于存储AI回复
+        const aiMessageId = Date.now();
+        setMessages(prev => [...prev, { id: aiMessageId, content: '', isSent: false }]);
+
+        // 调用 SiliconFlow API (流式传输)
         const response = await fetch('https://api.siliconflow.cn/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -35,11 +39,17 @@ export default function Home() {
           },
           body: JSON.stringify({
             model: "deepseek-ai/DeepSeek-V2-Chat",
-            messages: [{
-              role: "user",
-              content: content
-            }],
-            stream: false,
+            messages: [
+              {
+                role: "system",
+                content: "你是一位专业的室内设计师，擅长软装搭配和色彩设计。你需要：1. 根据用户的需求提供专业的配色方案建议；2. 解释每个配色方案的设计理念和情感效果；3. 考虑空间的功能性和整体协调性；4. 适时推荐合适的软装饰品来强化配色效果。请用专业且易懂的语言回答用户的问题。"
+              },
+              {
+                role: "user",
+                content: content
+              }
+            ],
+            stream: true, // 启用流式传输
             temperature: 0.7,
             max_tokens: 2000
           })
@@ -50,21 +60,46 @@ export default function Home() {
           throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
         }
 
-        const data = await response.json();
-        
-        if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-          throw new Error('API 返回数据格式错误');
-        }
+        // 处理流式响应
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let aiResponse = '';
 
-        const aiResponse = data.choices[0].message.content;
-        
-        // 添加AI回复到界面
-        setMessages(prev => [...prev, { content: aiResponse, isSent: false }]);
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          // 解码收到的数据
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+          
+          // 处理每一行数据
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
+              if (data === '[DONE]') continue;
+              
+              try {
+                const parsed = JSON.parse(data);
+                const content = parsed.choices[0]?.delta?.content || '';
+                aiResponse += content;
+                
+                // 更新UI中的消息
+                setMessages(prev => prev.map(msg => 
+                  msg.id === aiMessageId 
+                    ? { ...msg, content: aiResponse }
+                    : msg
+                ));
+              } catch (e) {
+                console.error('解析响应数据失败:', e);
+              }
+            }
+          }
+        }
 
       } catch (error) {
         console.error('Error details:', error);
         
-        // 根据错误类型显示不同的错误消息
         let errorMessage = "抱歉，发生了一些错误。请稍后重试。";
         if (error.message === 'API key 未设置') {
           errorMessage = "请先设置 API key";
@@ -82,13 +117,13 @@ export default function Home() {
   return (
     <div className={styles.chatContainer}>
       <div className={styles.chatHeader}>
-        <h2>AI 聊天室</h2>
+        <h2>室内设计师 AI 助手</h2>
       </div>
       <div className={styles.chatMessages} id="chat-messages">
         {messages.map((message, index) => (
           <div 
-            key={index} 
-            className={`${styles.message} ${message.isSent ? styles.sent : styles.received}`}
+            key={message.id || index}
+            className={`${styles.messageContent} ${message.isSent ? styles.sent : styles.received}`}
           >
             <div className={styles.messageContent}>
               {message.content}
