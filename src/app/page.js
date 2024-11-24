@@ -97,6 +97,70 @@ export default function Home() {
           }
         }
 
+        // 在设计师回复完成后，请求教授的点评
+        const professorResponse = await fetch('https://api.siliconflow.cn/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model: "deepseek-ai/DeepSeek-V2-Chat",
+            messages: [
+              {
+                role: "system",
+                content: "你是一位资深的室内设计学院教授，有着丰富的教学和实践经验。你的任务是对室内设计师的方案进行专业的点评：1. 分析设计方案的优点和创新点；2. 指出可能存在的问题或改进空间；3. 从专业角度补充建议；4. 对设计理念的可行性进行评估。请用专业但平易近人的语气进行点评。"
+              },
+              {
+                role: "user",
+                content: `请点评以下设计师的方案：\n${aiResponse}`
+              }
+            ],
+            stream: true,
+            temperature: 0.7,
+            max_tokens: 2000
+          })
+        });
+
+        // 处理教授点评的流式响应
+        const professorReader = professorResponse.body.getReader();
+        const professorDecoder = new TextDecoder();
+        let professorComment = '';
+        const professorMessageId = Date.now() + 1;
+
+        // 添加教授消息到界面
+        setMessages(prev => [...prev, { id: professorMessageId, content: '', isSent: false, isProfessor: true }]);
+
+        while (true) {
+          const { done, value } = await professorReader.read();
+          if (done) break;
+
+          const chunk = professorDecoder.decode(value);
+          const lines = chunk.split('\n');
+          
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
+              if (data === '[DONE]') continue;
+              
+              try {
+                const parsed = JSON.parse(data);
+                const content = parsed.choices[0]?.delta?.content || '';
+                professorComment += content;
+                
+                // 更新UI中的教授消息
+                setMessages(prev => prev.map(msg => 
+                  msg.id === professorMessageId 
+                    ? { ...msg, content: professorComment }
+                    : msg
+                ));
+              } catch (e) {
+                console.error('解析教授响应数据失败:', e);
+              }
+            }
+          }
+        }
+
       } catch (error) {
         console.error('Error details:', error);
         
@@ -117,17 +181,22 @@ export default function Home() {
   return (
     <div className={styles.chatContainer}>
       <div className={styles.chatHeader}>
-        <h2>室内设计师 AI 助手</h2>
+        <h2>室内设计师 AI 助手 & 教授点评</h2>
       </div>
-      <div className={styles.chatMessages} id="chat-messages">
+      <div className={styles.chatMessages}>
         {messages.map((message, index) => (
-          <div 
-            key={message.id || index}
-            className={`${styles.messageContent} ${message.isSent ? styles.sent : styles.received}`}
+          <div
+            key={index}
+            className={`${styles.message} ${
+              message.isSent ? styles.sent : styles.received
+            } ${message.isProfessor ? styles.professor : ''}`}
           >
-            <div className={styles.messageContent}>
-              {message.content}
-            </div>
+            {!message.isSent && (
+              <div className={styles.messageRole}>
+                {message.isProfessor ? '设计学院教授' : '室内设计师'}
+              </div>
+            )}
+            <div className={styles.messageContent}>{message.content}</div>
           </div>
         ))}
       </div>
