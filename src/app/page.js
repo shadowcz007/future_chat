@@ -1,6 +1,7 @@
 "use client";
 import { useState } from 'react';
 import styles from "./chat.module.css";
+import ReactMarkdown from 'react-markdown';
 
 export default function Home() {
   const [messages, setMessages] = useState([]);
@@ -196,7 +197,9 @@ export default function Home() {
                 {message.isProfessor ? '设计学院教授' : '室内设计师'}
               </div>
             )}
-            <div className={styles.messageContent}>{message.content}</div>
+            <div className={styles.messageContent}>
+              <ReactMarkdown>{message.content}</ReactMarkdown>
+            </div>
           </div>
         ))}
       </div>

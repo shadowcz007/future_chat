@@ -31,6 +31,85 @@
     word-wrap: break-word;
 }
 
+.messageContent :global(p) {
+    margin: 0.5em 0;
+}
+
+.messageContent :global(h1),
+.messageContent :global(h2),
+.messageContent :global(h3),
+.messageContent :global(h4),
+.messageContent :global(h5),
+.messageContent :global(h6) {
+    margin: 0.5em 0;
+    font-weight: 600;
+}
+
+.messageContent :global(ul),
+.messageContent :global(ol) {
+    margin: 0.5em 0;
+    padding-left: 1.5em;
+}
+
+.messageContent :global(li) {
+    margin: 0.25em 0;
+}
+
+.messageContent :global(code) {
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 0.9em;
+}
+
+.messageContent :global(pre) {
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 1em;
+    border-radius: 5px;
+    overflow-x: auto;
+}
+
+.messageContent :global(pre code) {
+    background-color: transparent;
+    padding: 0;
+}
+
+.messageContent :global(blockquote) {
+    margin: 0.5em 0;
+    padding-left: 1em;
+    border-left: 4px solid rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.7);
+}
+
+.messageContent :global(a) {
+    color: #0066cc;
+    text-decoration: none;
+}
+
+.messageContent :global(a:hover) {
+    text-decoration: underline;
+}
+
+@media (prefers-color-scheme: dark) {
+    .messageContent :global(code) {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .messageContent :global(pre) {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .messageContent :global(blockquote) {
+        border-left-color: rgba(255, 255, 255, 0.2);
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .messageContent :global(a) {
+        color: #66b3ff;
+    }
+}
+
 .sent {
     float: right;
 }
